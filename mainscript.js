@@ -1,3 +1,4 @@
+
 // Firebase configuration
 const firebaseConfig = {
   apiKey: "AIzaSyDRbQKhLrE9bzHGYTewfrP-uG3_DR75Gfo",
@@ -233,38 +234,39 @@ document.addEventListener('DOMContentLoaded', function() {
     renderCalendar(currentMonth, currentYear);
   });
 
-  // Load user data function
   async function loadUserData(userId) {
     try {
-      // Load user profile
       const userDoc = await db.collection('users').doc(userId).get();
+      const currentUser = auth.currentUser;
       
       if (userDoc.exists) {
         const userData = userDoc.data();
         
         // Update profile information in the UI
-        profileName.textContent = userData.name || 'User';
-        profileEmail.textContent = userData.email;
+        profileName.textContent = userData.name || currentUser.displayName || 'User';
+        profileEmail.textContent = userData.email || currentUser.email;
         
         // Handle profile picture
         if (userData.profilePic) {
           profilePic.src = userData.profilePic;
         } else {
-          // Set default profile picture if none exists
-          profilePic.src = 'assets/profile.png';
+          // Try to get photo from auth provider if available
+          profilePic.src = currentUser.photoURL || 'assets/profile.png';
         }
         
         // Update the last login time
-        await db.collection('users').doc(userId).update({
-          lastLogin: firebase.firestore.FieldValue.serverTimestamp()
-        });
+        await db.collection('users').doc(userId).set({
+          lastLogin: firebase.firestore.FieldValue.serverTimestamp(),
+          name: userData.name || currentUser.displayName || 'User',
+          email: userData.email || currentUser.email
+        }, { merge: true });
         
       } else {
-        // Create a basic user document if it doesn't exist
-        const currentUser = auth.currentUser;
+        // Create a new user document with data from auth provider
         await db.collection('users').doc(userId).set({
           name: currentUser.displayName || 'User',
           email: currentUser.email,
+          profilePic: currentUser.photoURL || '',
           createdAt: firebase.firestore.FieldValue.serverTimestamp(),
           lastLogin: firebase.firestore.FieldValue.serverTimestamp()
         });
@@ -272,8 +274,8 @@ document.addEventListener('DOMContentLoaded', function() {
         // Set default UI values
         profileName.textContent = currentUser.displayName || 'User';
         profileEmail.textContent = currentUser.email;
+        profilePic.src = currentUser.photoURL || 'assets/profile.png';
       }
-      
       // Load user tasks
       const tasksSnapshot = await db.collection('tasks')
         .where('userId', '==', userId)
