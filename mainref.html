@@ -1,0 +1,1161 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TickTask - To-Do List</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    /* Base Styles */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      background-color: #f5f7fa;
+      color: #333;
+    }
+
+    .container {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* Mobile Menu Button */
+    .mobile-menu-btn {
+      display: none;
+      position: fixed;
+      top: 15px;
+      left: 15px;
+      z-index: 1000;
+      background: #2c3e50;
+      color: white;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 250px;
+      background: #2c3e50;
+      color: white;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.3s ease;
+    }
+
+    .profile {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .profile-edit {
+      position: relative;
+      display: inline-block;
+    }
+
+    .profile-img {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      object-fit: cover;
+      margin-bottom: 10px;
+      border: 3px solid #3498db;
+    }
+
+    .edit-profile-btn {
+      position: absolute;
+      bottom: 5px;
+      right: 5px;
+      background: #3498db;
+      color: white;
+      border: none;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .sidebar nav ul {
+      list-style: none;
+    }
+
+    .sidebar nav ul li {
+      padding: 12px 15px;
+      margin: 5px 0;
+      border-radius: 5px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .sidebar nav ul li:hover {
+      background: #34495e;
+    }
+
+    .sidebar nav ul li.active {
+      background: #3498db;
+    }
+
+    .sidebar nav ul li i {
+      width: 20px;
+      text-align: center;
+    }
+
+    .upgrade-banner {
+      margin-top: auto;
+      background: rgba(255, 255, 255, 0.1);
+      padding: 15px;
+      border-radius: 8px;
+      text-align: center;
+    }
+
+    .upgrade-banner button {
+      background: #f39c12;
+      color: white;
+      border: none;
+      padding: 8px 15px;
+      border-radius: 5px;
+      margin-top: 10px;
+      cursor: pointer;
+      width: 100%;
+    }
+
+    /* Main Content */
+    .content {
+      flex: 1;
+      padding: 30px;
+    }
+
+    /* Content Sections */
+    .content-section {
+      display: none;
+    }
+
+    .content-section.active {
+      display: block;
+    }
+
+    header {
+      margin-bottom: 30px;
+    }
+
+    header h1 {
+      font-size: 28px;
+      color: #2c3e50;
+    }
+
+    .date-display {
+      color: #7f8c8d;
+      font-size: 14px;
+      margin-top: 5px;
+    }
+
+    /* Task Input */
+    .task-input {
+      margin-bottom: 25px;
+    }
+
+    .task-input input[type="text"] {
+      width: 100%;
+      padding: 12px 15px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      font-size: 16px;
+      margin-bottom: 10px;
+    }
+
+    .task-options {
+      display: flex;
+      gap: 10px;
+    }
+
+    .task-options select,
+    .task-options input[type="date"] {
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+    }
+
+    .task-options button {
+      padding: 10px 15px;
+      background: #3498db;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    /* Task Filters */
+    .task-filters {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .filter-btn {
+      padding: 8px 15px;
+      background: #ecf0f1;
+      border: none;
+      border-radius: 20px;
+      cursor: pointer;
+    }
+
+    .filter-btn.active {
+      background: #3498db;
+      color: white;
+    }
+
+    /* Task List */
+    .task-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .task-item {
+      background: white;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: all 0.3s ease;
+    }
+
+    .task-item:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    .task-info {
+      flex: 1;
+    }
+
+    .task-title {
+      font-weight: 600;
+      margin-bottom: 5px;
+    }
+
+    .task-meta {
+      display: flex;
+      gap: 15px;
+      font-size: 13px;
+      color: #7f8c8d;
+    }
+
+    .task-type {
+      padding: 3px 8px;
+      border-radius: 10px;
+      font-size: 12px;
+    }
+
+    .task-type.work {
+      background: #e3f2fd;
+      color: #1976d2;
+    }
+
+    .task-type.personal {
+      background: #e8f5e9;
+      color: #388e3c;
+    }
+
+    .task-type.medical {
+      background: #fce4ec;
+      color: #c2185b;
+    }
+
+    .task-type.study {
+      background: #fff3e0;
+      color: #f57c00;
+    }
+
+    .task-priority {
+      font-weight: bold;
+    }
+
+    .task-priority.high {
+      color: #e53935;
+    }
+
+    .task-priority.medium {
+      color: #fb8c00;
+    }
+
+    .task-priority.low {
+      color: #43a047;
+    }
+
+    .task-actions {
+      display: flex;
+      gap: 10px;
+    }
+
+    .task-actions button {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #7f8c8d;
+      font-size: 16px;
+    }
+
+    .task-actions button:hover {
+      color: #3498db;
+    }
+
+    .completed {
+      text-decoration: line-through;
+      opacity: 0.7;
+    }
+
+    /* Calendar */
+    .calendar-section {
+      margin-top: 40px;
+    }
+
+    .calendar-container {
+      margin-top: 15px;
+      height: 600px;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      overflow: hidden;
+    }
+
+    #google-calendar {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+
+    /* Custom Calendar (fallback) */
+    .calendar-section {
+      margin-top: 20px;
+    }
+
+    .calendar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+
+    .month-navigation {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .month-navigation button {
+      background: #3498db;
+      color: white;
+      border: none;
+      padding: 5px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .current-month {
+      font-size: 1.2rem;
+      font-weight: bold;
+    }
+
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 5px;
+    }
+
+    .day-header {
+      text-align: center;
+      font-weight: bold;
+      padding: 5px;
+      background: #f0f0f0;
+    }
+
+    .calendar-day {
+      min-height: 80px;
+      border: 1px solid #e0e0e0;
+      padding: 5px;
+      position: relative;
+    }
+
+    .day-number {
+      font-weight: bold;
+      margin-bottom: 3px;
+    }
+
+    .calendar-day.today {
+      background-color: #e3f2fd;
+    }
+
+    .calendar-day.other-month {
+      opacity: 0.5;
+      background-color: #f9f9f9;
+    }
+
+    .task-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-right: 3px;
+    }
+
+    .task-dot.high {
+      background-color: #e53935;
+    }
+
+    .task-dot.medium {
+      background-color: #2196f3;
+    }
+
+    .task-dot.low {
+      background-color: #ffeb3b;
+    }
+
+    .day-tasks {
+      margin-top: 5px;
+      font-size: 0.8rem;
+    }
+
+    .task-item-calendar {
+      margin: 2px 0;
+      padding: 2px;
+      border-radius: 3px;
+      background-color: rgba(255, 255, 255, 0.7);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      cursor: pointer;
+    }
+
+    .task-item-calendar.completed {
+      text-decoration: line-through;
+      opacity: 0.6;
+    }
+
+    /* Analytics */
+    .analytics-content {
+      margin-top: 20px;
+    }
+
+    .stats-container {
+      display: flex;
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+
+    .stat-card {
+      flex: 1;
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+
+    .stat-card h3 {
+      color: #7f8c8d;
+      font-size: 16px;
+      margin-bottom: 10px;
+    }
+
+    .stat-card p {
+      font-size: 24px;
+      font-weight: bold;
+      color: #2c3e50;
+    }
+
+    .chart-container {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      height: 300px;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .mobile-menu-btn {
+        display: flex;
+      }
+
+      .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 100%;
+        z-index: 999;
+        transform: translateX(-100%);
+      }
+
+      .sidebar.active {
+        transform: translateX(0);
+      }
+
+      .container {
+        flex-direction: column;
+      }
+
+      .content {
+        padding: 20px;
+        padding-top: 70px;
+      }
+
+      .task-options {
+        flex-wrap: wrap;
+      }
+
+      .stats-container {
+        flex-direction: column;
+      }
+
+      .calendar-container {
+        height: 400px;
+      }
+    }
+
+    /* Profile Modal Styles */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1001;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+    }
+
+    .modal-content {
+      background-color: #fff;
+      margin: 10% auto;
+      padding: 20px;
+      border-radius: 8px;
+      width: 90%;
+      max-width: 500px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .close-modal {
+      color: #aaa;
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .close-modal:hover {
+      color: #333;
+    }
+
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 600;
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+
+    .save-btn {
+      background-color: #3498db;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+      margin-top: 10px;
+    }
+
+    .save-btn:hover {
+      background-color: #2980b9;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Mobile Menu Button -->
+  <div class="mobile-menu-btn">
+    <i class="fas fa-bars"></i>
+  </div>
+
+  <div class="container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="profile">
+        <div class="profile-edit">
+          <img src="assets/profile.png" alt="Profile" class="profile-img" id="profile-pic">
+          <button class="edit-profile-btn"><i class="fas fa-camera"></i></button>
+          <input type="file" id="profile-upload" accept="image/*" style="display: none;">
+        </div>
+        <h3 id="profile-name">Guest</h3>
+        <p id="profile-email">guest@example.com</p>
+      </div>
+      <nav>
+        <ul>
+          <li class="active" data-section="tasks"><i class="fas fa-tasks"></i> Tasks</li>
+          <li data-section="calendar"><i class="fas fa-calendar-alt"></i> Calendar</li>
+          <li data-section="analytics"><i class="fas fa-chart-pie"></i> Analytics</li>
+        </ul>
+      </nav>
+
+      <div class="upgrade-banner">
+        <p>Upgrade to <strong>Pro</strong> for more features!</p>
+        <button>Upgrade</button>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="content">
+      <!-- Tasks Section -->
+      <div id="tasks-section" class="content-section active">
+        <header>
+          <h1>Today's Tasks</h1>
+          <div class="date-display">
+            <span id="current-date">Monday, June 10, 2024</span>
+          </div>
+        </header>
+
+        <!-- Task Input -->
+        <div class="task-input">
+          <input type="text" id="new-task" placeholder="Add a new task...">
+          <div class="task-options">
+            <select id="task-type">
+              <option value="work">Work</option>
+              <option value="personal">Personal</option>
+              <option value="medical">Medical</option>
+              <option value="study">Study</option>
+            </select>
+            <input type="date" id="task-date">
+            <select id="task-priority">
+              <option value="low">Low</option>
+              <option value="medium" selected>Medium</option>
+              <option value="high">High</option>
+            </select>
+            <button id="add-task"><i class="fas fa-plus"></i> Add</button>
+          </div>
+        </div>
+
+        <!-- Task Filters -->
+        <div class="task-filters">
+          <button class="filter-btn active" data-filter="all">All</button>
+          <button class="filter-btn" data-filter="today">Today</button>
+          <button class="filter-btn" data-filter="high">High Priority</button>
+        </div>
+
+        <!-- Task List -->
+        <div class="task-list" id="task-list">
+          <!-- Tasks will be added here dynamically -->
+        </div>
+      </div>
+
+      <!-- Calendar Section -->
+      <div id="calendar-section" class="content-section">
+        <h2><i class="fas fa-calendar-alt"></i> Calendar</h2>
+        <div class="calendar-container">
+          <div class="calendar-header">
+            <div class="month-navigation">
+              <button id="prev-month"><i class="fas fa-chevron-left"></i></button>
+              <div class="current-month" id="current-month">June 2023</div>
+              <button id="next-month"><i class="fas fa-chevron-right"></i></button>
+            </div>
+          </div>
+          <div class="calendar-grid" id="calendar-grid">
+            <!-- Calendar will be generated here -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Analytics Section -->
+      <div id="analytics-section" class="content-section">
+        <h2><i class="fas fa-chart-pie"></i> Analytics</h2>
+        <div class="analytics-content">
+          <div class="stats-container">
+            <div class="stat-card">
+              <h3>Total Tasks</h3>
+              <p id="total-tasks">0</p>
+            </div>
+            <div class="stat-card">
+              <h3>Completed</h3>
+              <p id="completed-tasks">0</p>
+            </div>
+            <div class="stat-card">
+              <h3>Pending</h3>
+              <p id="pending-tasks">0</p>
+            </div>
+          </div>
+          <div class="chart-container">
+            <canvas id="tasks-chart"></canvas>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Profile Edit Modal -->
+  <div id="profile-modal" class="modal">
+    <div class="modal-content">
+      <span class="close-modal">&times;</span>
+      <h2>Edit Profile</h2>
+      <form id="profile-form">
+        <div class="form-group">
+          <label for="edit-name">Name:</label>
+          <input type="text" id="edit-name" required>
+        </div>
+        <div class="form-group">
+          <label for="edit-email">Email:</label>
+          <input type="email" id="edit-email" required>
+        </div>
+        <div class="form-group">
+          <label for="edit-pic">Profile Picture:</label>
+          <input type="file" id="edit-pic" accept="image/*">
+        </div>
+        <button type="submit" class="save-btn">Save Changes</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Profile editing functionality
+      const profileModal = document.getElementById('profile-modal');
+      const closeModal = document.querySelector('.close-modal');
+      const profileForm = document.getElementById('profile-form');
+      const editName = document.getElementById('edit-name');
+      const editEmail = document.getElementById('edit-email');
+      const editPic = document.getElementById('edit-pic');
+      const profileUpload = document.getElementById('profile-upload');
+      const profilePic = document.getElementById('profile-pic');
+      const profileName = document.getElementById('profile-name');
+      const profileEmail = document.getElementById('profile-email');
+      const editProfileBtn = document.querySelector('.edit-profile-btn');
+
+      // Open modal when edit button is clicked
+      editProfileBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        editName.value = profileName.textContent;
+        editEmail.value = profileEmail.textContent;
+        profileModal.style.display = 'block';
+      });
+
+      // Close modal when X is clicked
+      closeModal.addEventListener('click', function() {
+        profileModal.style.display = 'none';
+      });
+
+      // Close modal when clicking outside
+      window.addEventListener('click', function(event) {
+        if (event.target === profileModal) {
+          profileModal.style.display = 'none';
+        }
+      });
+
+      // Handle profile form submission
+      profileForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const name = editName.value.trim();
+        const email = editEmail.value.trim();
+        
+        // Update profile info
+        profileName.textContent = name;
+        profileEmail.textContent = email;
+        
+        // Save to localStorage
+        localStorage.setItem('profileName', name);
+        localStorage.setItem('profileEmail', email);
+        
+        // Handle profile picture if selected
+        if (editPic.files.length > 0) {
+          const file = editPic.files[0];
+          const reader = new FileReader();
+          
+          reader.onload = function(event) {
+            profilePic.src = event.target.result;
+            localStorage.setItem('profilePic', event.target.result);
+          };
+          
+          reader.readAsDataURL(file);
+        }
+        
+        // Close modal
+        profileModal.style.display = 'none';
+      });
+
+      // Handle direct profile picture upload (camera button)
+      profileUpload.addEventListener('change', function(e) {
+        if (e.target.files.length) {
+          const reader = new FileReader();
+          reader.onload = function(event) {
+            profilePic.src = event.target.result;
+            localStorage.setItem('profilePic', event.target.result);
+          };
+          reader.readAsDataURL(e.target.files[0]);
+        }
+      });
+
+      // Load saved profile data
+      function loadProfile() {
+        if (localStorage.getItem('profilePic')) {
+          profilePic.src = localStorage.getItem('profilePic');
+        }
+        if (localStorage.getItem('profileName')) {
+          profileName.textContent = localStorage.getItem('profileName');
+        }
+        if (localStorage.getItem('profileEmail')) {
+          profileEmail.textContent = localStorage.getItem('profileEmail');
+        }
+      }
+
+      // Initialize profile
+      loadProfile();
+
+      // Sidebar toggle functionality
+      const sidebar = document.querySelector('.sidebar');
+      const mobileMenuBtn = document.querySelector('.mobile-menu-btn');
+      
+      mobileMenuBtn.addEventListener('click', function() {
+        sidebar.classList.toggle('active');
+      });
+
+      // Section switching functionality
+      const navItems = document.querySelectorAll('nav ul li');
+      const contentSections = document.querySelectorAll('.content-section');
+      
+      navItems.forEach(item => {
+        item.addEventListener('click', function() {
+          navItems.forEach(navItem => navItem.classList.remove('active'));
+          contentSections.forEach(section => section.classList.remove('active'));
+          
+          this.classList.add('active');
+          const sectionId = `${this.dataset.section}-section`;
+          document.getElementById(sectionId).classList.add('active');
+          
+          if (window.innerWidth <= 768) {
+            sidebar.classList.remove('active');
+          }
+          
+          if (this.dataset.section === 'analytics') {
+            updateAnalytics();
+          } else if (this.dataset.section === 'calendar') {
+            renderCalendar(currentMonth, currentYear);
+          }
+        });
+      });
+
+      // Current date display
+      const currentDate = new Date();
+      const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+      document.getElementById('current-date').textContent = currentDate.toLocaleDateString('en-US', options);
+
+      // Task array to store tasks
+      let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+
+      // DOM elements
+      const taskInput = document.getElementById('new-task');
+      const taskType = document.getElementById('task-type');
+      const taskDate = document.getElementById('task-date');
+      const taskPriority = document.getElementById('task-priority');
+      const addTaskBtn = document.getElementById('add-task');
+      const taskList = document.getElementById('task-list');
+      const filterButtons = document.querySelectorAll('.filter-btn');
+
+      // Calendar variables
+      let currentMonth = currentDate.getMonth();
+      let currentYear = currentDate.getFullYear();
+      const prevMonthBtn = document.getElementById('prev-month');
+      const nextMonthBtn = document.getElementById('next-month');
+      const currentMonthDisplay = document.getElementById('current-month');
+      
+      // Initialize
+      renderTasks();
+      renderCalendar(currentMonth, currentYear);
+
+      // Add task
+      addTaskBtn.addEventListener('click', addTask);
+      taskInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') addTask();
+      });
+
+      // Filter tasks
+      filterButtons.forEach(button => {
+        button.addEventListener('click', function() {
+          filterButtons.forEach(btn => btn.classList.remove('active'));
+          this.classList.add('active');
+          renderTasks(this.dataset.filter);
+        });
+      });
+
+      // Calendar navigation
+      prevMonthBtn.addEventListener('click', function() {
+        currentMonth--;
+        if (currentMonth < 0) {
+          currentMonth = 11;
+          currentYear--;
+        }
+        renderCalendar(currentMonth, currentYear);
+      });
+
+      nextMonthBtn.addEventListener('click', function() {
+        currentMonth++;
+        if (currentMonth > 11) {
+          currentMonth = 0;
+          currentYear++;
+        }
+        renderCalendar(currentMonth, currentYear);
+      });
+
+      // Functions
+      function addTask() {
+        const title = taskInput.value.trim();
+        if (!title) return;
+
+        const newTask = {
+          id: Date.now(),
+          title,
+          type: taskType.value,
+          date: taskDate.value || formatDate(currentDate),
+          priority: taskPriority.value,
+          completed: false,
+          createdAt: new Date().toISOString()
+        };
+
+        tasks.unshift(newTask);
+        saveTasks();
+        renderTasks();
+        
+        // Reset input
+        taskInput.value = '';
+        taskDate.value = '';
+        
+        // Update calendar if we're viewing it
+        if (document.getElementById('calendar-section').classList.contains('active')) {
+          renderCalendar(currentMonth, currentYear);
+        }
+      }
+
+      function renderTasks(filter = 'all') {
+        taskList.innerHTML = '';
+
+        let filteredTasks = [...tasks];
+       
+        // Apply filters
+        if (filter === 'today') {
+          const today = formatDate(currentDate);
+          filteredTasks = tasks.filter(task => task.date === today);
+        } else if (filter === 'high') {
+          filteredTasks = tasks.filter(task => task.priority === 'high');
+        }
+
+        if (filteredTasks.length === 0) {
+          taskList.innerHTML = '<p class="no-tasks">No tasks found</p>';
+          return;
+        }
+
+        filteredTasks.forEach(task => {
+          const taskElement = document.createElement('div');
+          taskElement.className = `task-item ${task.completed ? 'completed' : ''}`;
+          taskElement.innerHTML = `
+            <div class="task-info">
+              <div class="task-title">${task.title}</div>
+              <div class="task-meta">
+                <span class="task-type ${task.type}">${task.type}</span>
+                <span>${formatDisplayDate(task.date)}</span>
+                <span class="task-priority ${task.priority}">${task.priority}</span>
+              </div>
+            </div>
+            <div class="task-actions">
+              <button class="complete-btn" data-id="${task.id}">
+                <i class="fas fa-check"></i>
+              </button>
+              <button class="delete-btn" data-id="${task.id}">
+                <i class="fas fa-trash"></i>
+              </button>
+            </div>
+          `;
+          taskList.appendChild(taskElement);
+        });
+
+        // Add event listeners to new buttons
+        document.querySelectorAll('.complete-btn').forEach(button => {
+          button.addEventListener('click', toggleComplete);
+        });
+
+        document.querySelectorAll('.delete-btn').forEach(button => {
+          button.addEventListener('click', deleteTask);
+        });
+      }
+
+      function renderCalendar(month, year) {
+        const calendarGrid = document.getElementById('calendar-grid');
+        calendarGrid.innerHTML = '';
+        
+        // Set the current month display
+        const monthNames = ["January", "February", "March", "April", "May", "June", 
+                           "July", "August", "September", "October", "November", "December"];
+        currentMonthDisplay.textContent = `${monthNames[month]} ${year}`;
+        
+        // Get the first day of the month and how many days in the month
+        const firstDay = new Date(year, month, 1).getDay();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        
+        // Get days from previous month to show
+        const daysInPrevMonth = new Date(year, month, 0).getDate();
+        
+        // Create day headers
+        const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+        dayNames.forEach(day => {
+          const dayHeader = document.createElement('div');
+          dayHeader.className = 'day-header';
+          dayHeader.textContent = day;
+          calendarGrid.appendChild(dayHeader);
+        });
+        
+        // Add days from previous month
+        for (let i = firstDay - 1; i >= 0; i--) {
+          const day = document.createElement('div');
+          day.className = 'calendar-day other-month';
+          day.innerHTML = `<div class="day-number">${daysInPrevMonth - i}</div>`;
+          calendarGrid.appendChild(day);
+        }
+        
+        // Add days from current month
+        const today = new Date();
+        for (let i = 1; i <= daysInMonth; i++) {
+          const day = document.createElement('div');
+          const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+          
+          // Check if this is today
+          const isToday = today.getDate() === i && 
+                          today.getMonth() === month && 
+                          today.getFullYear() === year;
+          
+          day.className = `calendar-day ${isToday ? 'today' : ''}`;
+          day.innerHTML = `<div class="day-number">${i}</div>`;
+          
+          // Add tasks for this day
+          const dayTasks = tasks.filter(task => task.date === dateStr);
+          if (dayTasks.length > 0) {
+            const tasksContainer = document.createElement('div');
+            tasksContainer.className = 'day-tasks';
+            
+            dayTasks.forEach(task => {
+              const taskElement = document.createElement('div');
+              taskElement.className = `task-item-calendar ${task.completed ? 'completed' : ''}`;
+              taskElement.innerHTML = `
+                <span class="task-dot ${task.priority}"></span>
+                ${task.title}
+              `;
+              taskElement.addEventListener('click', () => {
+                // Switch to tasks view and filter for this day
+                document.querySelector('nav ul li[data-section="tasks"]').click();
+                document.querySelector('.filter-btn[data-filter="today"]').click();
+              });
+              tasksContainer.appendChild(taskElement);
+            });
+            
+            day.appendChild(tasksContainer);
+          }
+          
+          calendarGrid.appendChild(day);
+        }
+        
+        // Add days from next month to fill the grid
+        const totalCells = firstDay + daysInMonth;
+        const remainingCells = 42 - totalCells; // 6 rows x 7 days
+        
+        for (let i = 1; i <= remainingCells; i++) {
+          const day = document.createElement('div');
+          day.className = 'calendar-day other-month';
+          day.innerHTML = `<div class="day-number">${i}</div>`;
+          calendarGrid.appendChild(day);
+        }
+      }
+
+      function toggleComplete(e) {
+        const taskId = parseInt(e.currentTarget.dataset.id);
+        const taskIndex = tasks.findIndex(task => task.id === taskId);
+       
+        if (taskIndex !== -1) {
+          tasks[taskIndex].completed = !tasks[taskIndex].completed;
+          saveTasks();
+          renderTasks(document.querySelector('.filter-btn.active').dataset.filter);
+          updateAnalytics();
+          
+          // Update calendar if we're viewing it
+          if (document.getElementById('calendar-section').classList.contains('active')) {
+            renderCalendar(currentMonth, currentYear);
+          }
+        }
+      }
+
+      function deleteTask(e) {
+        const taskId = parseInt(e.currentTarget.dataset.id);
+        tasks = tasks.filter(task => task.id !== taskId);
+        saveTasks();
+        renderTasks(document.querySelector('.filter-btn.active').dataset.filter);
+        updateAnalytics();
+        
+        // Update calendar if we're viewing it
+        if (document.getElementById('calendar-section').classList.contains('active')) {
+          renderCalendar(currentMonth, currentYear);
+        }
+      }
+
+      function saveTasks() {
+        localStorage.setItem('tasks', JSON.stringify(tasks));
+      }
+
+      function updateAnalytics() {
+        const totalTasks = tasks.length;
+        const completedTasks = tasks.filter(task => task.completed).length;
+        const pendingTasks = totalTasks - completedTasks;
+        
+        document.getElementById('total-tasks').textContent = totalTasks;
+        document.getElementById('completed-tasks').textContent = completedTasks;
+        document.getElementById('pending-tasks').textContent = pendingTasks;
+      }
+
+      // Helper functions
+      function formatDate(date) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      }
+
+      function formatDisplayDate(dateStr) {
+        const date = new Date(dateStr);
+        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      }
+    });
+  </script>
+</body>
+</html>

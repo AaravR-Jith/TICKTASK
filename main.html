@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TickTask - To-Do List</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="mainstyles.css">
+</head>
+<body>
+  <!-- Mobile Menu Button -->
+  <div class="mobile-menu-btn">
+    <i class="fas fa-bars"></i>
+  </div>
+
+  <div class="container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="profile">
+        <div class="profile-edit">
+          <img src="assets/profile.png" alt="Profile" class="profile-img" id="profile-pic">
+          <button class="edit-profile-btn"><i class="fas fa-camera"></i></button>
+          <input type="file" id="profile-upload" accept="image/*" style="display: none;">
+        </div>
+        <h3 id="profile-name">Guest</h3>
+        <p id="profile-email">guest@example.com</p>
+      </div>
+      <nav>
+        <ul>
+          <li class="active" data-section="tasks"><i class="fas fa-tasks"></i> Tasks</li>
+          <li data-section="calendar"><i class="fas fa-calendar-alt"></i> Calendar</li>
+          <li data-section="analytics"><i class="fas fa-chart-pie"></i> Analytics</li>
+        </ul>
+      </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="content">
+      <!-- Tasks Section -->
+      <div id="tasks-section" class="content-section active">
+        <header>
+          <h1>Today's Tasks</h1>
+          <div class="date-display">
+            <span id="current-date">Monday, June 10, 2024</span>
+          </div>
+          <div class="reminder-options">
+            <label>
+              <input type="checkbox" id="set-reminder"> Set Reminder
+            </label>
+            <div id="reminder-details" style="display: none;">
+              <select id="reminder-time">
+                <option value="5">5 minutes before</option>
+                <option value="10">10 minutes before</option>
+                <option value="15">15 minutes before</option>
+                <option value="30">30 minutes before</option>
+                <option value="60">1 hour before</option>
+                <option value="1440">1 day before</option>
+              </select>
+              <input type="time" id="reminder-time-specific">
+            </div>
+          </div>
+        </header>
+        <!-- Task Input -->
+        <div class="task-input">
+          <input type="text" id="new-task" placeholder="Add a new task...">
+          <div class="task-options">
+            <select id="task-type">
+              <option value="work">Work</option>
+              <option value="personal">Personal</option>
+              <option value="medical">Medical</option>
+              <option value="study">Study</option>
+            </select>
+            <input type="date" id="task-date">
+            <select id="task-priority">
+              <option value="low">Low</option>
+              <option value="medium" selected>Medium</option>
+              <option value="high">High</option>
+            </select>
+            <button id="add-task"><i class="fas fa-plus"></i> Add</button>
+          </div>
+        </div>
+        <!-- Task Filters -->
+        <div class="task-filters">
+          <button class="filter-btn active" data-filter="all">All</button>
+          <button class="filter-btn" data-filter="today">Today</button>
+          <button class="filter-btn" data-filter="high">High Priority</button>
+        </div>
+        <!-- Task List -->
+        <div class="task-list" id="task-list">
+          <!-- Tasks will be added here dynamically -->
+        </div>
+      </div>
+
+      <!-- Calendar Section -->
+      <div id="calendar-section" class="content-section">
+        <header>
+          <h1><i class="fas fa-calendar-alt"></i> Calendar</h1>
+          <div class="date-display">
+            <span id="calendar-date-display">June 2023</span>
+          </div>
+        </header>
+        <div class="calendar-navigation">
+          <button id="prev-month"><i class="fas fa-chevron-left"></i></button>
+          <button id="next-month"><i class="fas fa-chevron-right"></i></button>
+        </div>
+        <div class="calendar-container">
+          <div class="calendar-header">
+            <div>Sun</div>
+            <div>Mon</div>
+            <div>Tue</div>
+            <div>Wed</div>
+            <div>Thu</div>
+            <div>Fri</div>
+            <div>Sat</div>
+          </div>
+          <div class="calendar-grid" id="calendar-grid">
+            <!-- Calendar days will be generated here -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Analytics Section -->
+      <div id="analytics-section" class="content-section">
+        <h2><i class="fas fa-chart-pie"></i> Analytics</h2>
+        <div class="analytics-content">
+          <div class="stats-container">
+            <div class="stat-card">
+              <h3>Total Tasks</h3>
+              <p id="total-tasks">0</p>
+            </div>
+            <div class="stat-card">
+              <h3>Completed</h3>
+              <p id="completed-tasks">0</p>
+            </div>
+            <div class="stat-card">
+              <h3>Pending</h3>
+              <p id="pending-tasks">0</p>
+            </div>
+          </div>
+          <div class="chart-container">
+            <canvas id="tasks-chart"></canvas>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Profile Edit Modal -->
+  <div id="profile-modal" class="modal">
+    <div class="modal-content">
+      <span class="close-modal">&times;</span>
+      <h2>Edit Profile</h2>
+      <form id="profile-form">
+        <div class="form-group">
+          <label for="edit-name">Name:</label>
+          <input type="text" id="edit-name" required>
+        </div>
+        <div class="form-group">
+          <label for="edit-email">Email:</label>
+          <input type="email" id="edit-email" required>
+        </div>
+        <div class="form-group">
+          <label for="edit-pic">Profile Picture:</label>
+          <input type="file" id="edit-pic" accept="image/*">
+        </div>
+        <button type="submit" class="save-btn">Save Changes</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
+  <script src="mainscript.js"></script>
+</body>
+</html>
