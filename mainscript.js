@@ -662,3 +662,86 @@ async function addTask() {
 
   document.querySelector('.sidebar').appendChild(logoutBtn);
 });
+// Theme Customization
+document.addEventListener('DOMContentLoaded', function() {
+  // Load saved theme
+  const savedTheme = localStorage.getItem('theme') || 'default';
+  const savedMode = localStorage.getItem('mode') || 'light';
+  
+  // Apply saved theme
+  applyTheme(savedTheme, savedMode);
+  
+  // Color selection
+  document.querySelectorAll('.color-option').forEach(option => {
+    option.addEventListener('click', function() {
+      const color = this.dataset.color;
+      applyTheme(color, savedMode);
+      localStorage.setItem('theme', color);
+    });
+  });
+  
+  // Mode selection
+  document.querySelectorAll('.mode-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const mode = this.dataset.mode;
+      applyTheme(savedTheme, mode);
+      localStorage.setItem('mode', mode);
+    });
+  });
+  
+  // Function to apply theme
+  function applyTheme(theme, mode) {
+    // Remove all theme classes first
+    document.body.classList.remove(
+      'theme-default', 'theme-green', 'theme-purple', 
+      'theme-red', 'theme-orange', 'dark-mode', 'light-mode'
+    );
+    
+    // Apply color theme if not default
+    if (theme !== 'default') {
+      document.body.classList.add(`theme-${theme}`);
+    }
+    
+    // Apply mode
+    document.body.classList.add(`${mode}-mode`);
+    
+    // Update active buttons
+    document.querySelectorAll('.color-option').forEach(opt => 
+      opt.classList.remove('active')
+    );
+    document.querySelector(`.color-option[data-color="${theme}"]`)?.classList.add('active');
+    
+    document.querySelectorAll('.mode-btn').forEach(btn => 
+      btn.classList.remove('active')
+    );
+    document.querySelector(`.mode-btn[data-mode="${mode}"]`)?.classList.add('active');
+    
+    // Update UI elements that need specific color changes
+    updateThemeColors();
+  }
+  
+  // Function to update theme-dependent elements
+  function updateThemeColors() {
+    const primaryColor = getComputedStyle(document.body).getPropertyValue('--primary').trim();
+    
+    // Update elements that need explicit color changes
+    document.querySelectorAll('.sidebar nav ul li.active').forEach(el => 
+      el.style.backgroundColor = primaryColor
+    );
+    
+    document.querySelectorAll(
+      '.filter-btn.active, .task-options button, .edit-profile-btn, ' +
+      '.save-btn, .calendar-navigation button, .mode-btn.active'
+    ).forEach(el => 
+      el.style.backgroundColor = primaryColor
+    );
+    
+    document.querySelectorAll('.profile-img').forEach(el => 
+      el.style.borderColor = primaryColor
+    );
+    
+    document.querySelectorAll('.color-option.active').forEach(el => 
+      el.style.boxShadow = `0 0 0 2px white, 0 0 0 4px ${primaryColor}`
+    );
+  }
+});

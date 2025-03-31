@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Scheduler</title>
+    <link rel="stylesheet" href="./remainder.css">
+</head>
+<body>
+    <div class="container">
+        <h2>📅 Task Scheduler</h2>
+        <form id="taskForm">
+            <div class="input-group">
+                <label for="task">Task Details:</label>
+                <input type="text" id="task" required placeholder="Enter task details">
+            </div>
+
+            <div class="input-row">
+                <div class="input-group">
+                    <label for="date">Date:</label>
+                    <input type="date" id="date" required>
+                </div>
+
+                <div class="input-group">
+                    <label for="time">Time:</label>
+                    <input type="time" id="time" required>
+                </div>
+            </div>
+
+            <button type="submit" class="add-btn">➕ Add Task</button>
+        </form>
+
+        <h3>📝 Upcoming Tasks</h3>
+        <ul id="taskList"></ul>
+    </div>
+    <script src="remainder.js"></script>
+</body>
+</html>
