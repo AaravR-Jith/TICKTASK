@@ -278,86 +278,83 @@ document.addEventListener('DOMContentLoaded', function() {
       }
       // Load user tasks
       const tasksSnapshot = await db.collection('tasks')
-        .where('userId', '==', userId)
-        .orderBy('createdAt', 'desc')
-        .get();
-      
-      tasks = tasksSnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        // Convert Firestore Timestamp to Date if needed
-        createdAt: doc.data().createdAt?.toDate() || new Date(),
-        date: doc.data().date || formatDate(new Date())
-      }));
-      
-      renderTasks();
-      renderCalendar(currentMonth, currentYear);
-      updateAnalytics();
-      
-    } catch (error) {
-      console.error("Error loading user data:", error);
-      // Show user-friendly error message
-      const errorMessage = document.createElement('div');
-      errorMessage.className = 'error-message';
-      errorMessage.textContent = 'Failed to load user data. Please refresh the page.';
-      document.querySelector('.content').prepend(errorMessage);
-      
-      // Remove error message after 5 seconds
-      setTimeout(() => {
-        errorMessage.remove();
-      }, 5000);
-    }
+      .where('userId', '==', userId)
+      .orderBy('createdAt', 'desc')
+      .get();
+    
+    tasks = tasksSnapshot.docs.map(doc => ({
+      id: doc.id,  // Include the document ID
+      ...doc.data(),
+      // Convert Firestore Timestamp to Date if needed
+      createdAt: doc.data().createdAt?.toDate() || new Date(),
+      date: doc.data().date || formatDate(new Date())
+    }));
+    
+    renderTasks();
+    renderCalendar(currentMonth, currentYear);
+    updateAnalytics();
+    
+  } catch (error) {
+    console.error("Error loading tasks:", error);
+    alert("Failed to load tasks. Please refresh the page.");
+  }
+}
+  // Add task function with reminder support
+  // Function to add a new task
+async function addTask() {
+  const title = taskInput.value.trim();
+  if (!title) return;
+  
+  const user = auth.currentUser;
+  if (!user) {
+    console.error("No user signed in");
+    return;
   }
 
-  // Add task function with reminder support
-  async function addTask() {
-    const title = taskInput.value.trim();
-    if (!title) return;
-    const user = auth.currentUser;
-    if (!user) return;
-    const newTask = {
-      title,
-      type: taskType.value,
-      date: taskDate.value || formatDate(new Date()),
-      priority: taskPriority.value,
-      completed: false,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-      userId: user.uid
-    };
-    
-    // Add reminder data if set
-    if (setReminderCheckbox.checked) {
-      newTask.reminder = {
+  const newTask = {
+    title: title,
+    type: taskType.value,
+    date: taskDate.value || formatDate(new Date()),
+    priority: taskPriority.value,
+    completed: false,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+    userId: user.uid,  // This associates the task with the user
+    // Add reminder data if needed
+    ...(setReminderCheckbox.checked && {
+      reminder: {
         minutesBefore: parseInt(reminderTime.value),
         specificTime: reminderTimeSpecific.value
-      };
-      
-      // Calculate reminder time
-      const taskDateTime = calculateReminderTime(newTask.date, newTask.reminder);
-      newTask.reminderTime = taskDateTime;
-      
-      // Schedule notification
-      scheduleNotification(newTask, taskDateTime);
-    }
+      }
+    })
+  };
+
+  try {
+    // Add the new task to Firestore
+    const docRef = await db.collection('tasks').add(newTask);
     
-    try {
-      const docRef = await db.collection('tasks').add(newTask);
-      newTask.id = docRef.id;
-      tasks.unshift(newTask);
-      
-      renderTasks();
-      renderCalendar(currentMonth, currentYear);
-      updateAnalytics();
-      
-      // Reset inputs
-      taskInput.value = '';
-      taskDate.value = formatDate(new Date());
-      setReminderCheckbox.checked = false;
-      reminderDetails.style.display = 'none';
-    } catch (error) {
-      console.error("Error adding task:", error);
-    }
+    // Add the ID to our local task object
+    newTask.id = docRef.id;
+    
+    // Add to local tasks array
+    tasks.unshift(newTask);
+    
+    // Update UI
+    renderTasks();
+    renderCalendar(currentMonth, currentYear);
+    updateAnalytics();
+    
+    // Reset form
+    taskInput.value = '';
+    taskDate.value = formatDate(new Date());
+    setReminderCheckbox.checked = false;
+    reminderDetails.style.display = 'none';
+    
+    console.log("Task added with ID: ", docRef.id);
+  } catch (error) {
+    console.error("Error adding task: ", error);
+    alert("Failed to add task: " + error.message);
   }
+}
 
   // Calculate reminder time
   function calculateReminderTime(taskDate, reminder) {
@@ -572,43 +569,52 @@ document.addEventListener('DOMContentLoaded', function() {
       calendarGrid.appendChild(dayElement);
     }
   }
-
-  // Toggle task completion
   async function toggleComplete(e) {
     const taskId = e.currentTarget.dataset.id;
     const taskIndex = tasks.findIndex(task => task.id === taskId);
     
     if (taskIndex !== -1) {
       const newCompletedState = !tasks[taskIndex].completed;
-      tasks[taskIndex].completed = newCompletedState;
       
       try {
+        // Update in Firestore
         await db.collection('tasks').doc(taskId).update({
-          completed: newCompletedState
+          completed: newCompletedState,
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         });
         
+        // Update local state
+        tasks[taskIndex].completed = newCompletedState;
+        
+        // Update UI
         renderTasks(document.querySelector('.filter-btn.active').dataset.filter);
         renderCalendar(currentMonth, currentYear);
         updateAnalytics();
       } catch (error) {
         console.error("Error updating task:", error);
+        alert("Failed to update task status.");
       }
     }
   }
-
-  // Delete task function
   async function deleteTask(e) {
     const taskId = e.currentTarget.dataset.id;
     
+    if (!confirm("Are you sure you want to delete this task?")) return;
+    
     try {
+      // Delete from Firestore
       await db.collection('tasks').doc(taskId).delete();
+      
+      // Remove from local array
       tasks = tasks.filter(task => task.id !== taskId);
       
+      // Update UI
       renderTasks(document.querySelector('.filter-btn.active').dataset.filter);
       renderCalendar(currentMonth, currentYear);
       updateAnalytics();
     } catch (error) {
       console.error("Error deleting task:", error);
+      alert("Failed to delete task.");
     }
   }
 

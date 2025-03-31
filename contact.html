@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact Us - TickTask</title>
+</head>
+<body>
+    <div class="container">
+        <h1>Contact Us</h1>
+        <p>We'd love to hear from you! Your feedback helps us improve.</p>
+        
+        <form id="contactForm">
+            <input type="text" id="name" placeholder="Your Name" required>
+            <input type="email" id="email" placeholder="Your Email" required>
+            <textarea id="message" placeholder="Your Message" required></textarea>
+            <button type="submit">Send Message</button>
+        </form>
+
+        <div id="feedbackList">
+            <h3>Recent Feedback</h3>
+            <!-- Feedback will appear here -->
+        </div>
+        <a href="login.html" class="btn">Return to Login</a>
+    </div>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #f5f7fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 500px;
+            padding: 30px;
+        }
+        h1 { color: #4361ee; margin-bottom: 15px; }
+        p { color: #6c757d; margin-bottom: 25px; }
+        form { display: flex; flex-direction: column; gap: 15px; }
+        input, textarea {
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+        textarea { min-height: 120px; resize: vertical; }
+        button {
+            background: #4361ee;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        #feedbackList {
+            margin-top: 30px;
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+        }
+        .feedback-item {
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+        .feedback-name { font-weight: 600; color: #333; }
+        .feedback-message { color: #555; font-size: 14px; }
+        .btn {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 18px;
+            color: white;
+            background-color: #007BFF;
+            border: none;
+            border-radius: 5px;
+            text-decoration: none;
+            transition: 0.3s;
+        }
+        .btn:hover {
+            background-color: #0056b3;
+        }
+</style>
+    <script>
+        // Simple feedback storage (replace with Firebase in production)
+        let feedbacks = JSON.parse(localStorage.getItem('feedbacks')) || [];
+        
+        document.getElementById('contactForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const name = document.getElementById('name').value;
+            const message = document.getElementById('message').value;
+            
+            // Add to feedback array
+            feedbacks.unshift({ name, message });
+            localStorage.setItem('feedbacks', JSON.stringify(feedbacks));
+            
+            // Update display
+            displayFeedback();
+            e.target.reset();
+            alert('Thank you for your feedback!');
+        });
+
+        function displayFeedback() {
+            const container = document.getElementById('feedbackList');
+            container.innerHTML = '<h3>Recent Feedback</h3>';
+            
+            feedbacks.slice(0, 3).forEach(feedback => {
+                const div = document.createElement('div');
+                div.className = 'feedback-item';
+                div.innerHTML = `
+                    <div class="feedback-name">${feedback.name}</div>
+                    <div class="feedback-message">${feedback.message}</div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        // Initial display
+        displayFeedback();
+    </script>
+</body>
+</html>
