@@ -194,7 +194,6 @@ document.addEventListener('DOMContentLoaded', function() {
   const taskList = document.getElementById('task-list');
   const filterButtons = document.querySelectorAll('.filter-btn');
 
-
   // Current date display
   const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
   document.getElementById('current-date').textContent = new Date().toLocaleDateString('en-US', options);
@@ -252,13 +251,7 @@ document.addEventListener('DOMContentLoaded', function() {
       priority: taskPriority.value,
       completed: false,
       createdAt: new Date().toISOString(),
-      userId: currentUser,
-      ...(setReminderCheckbox.checked && {
-        reminder: {
-          minutesBefore: parseInt(reminderTime.value),
-          specificTime: reminderTimeSpecific.value
-        }
-      })
+      userId: currentUser
     };
 
     tasks.unshift(newTask);
@@ -272,8 +265,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // Reset form
     taskInput.value = '';
     taskDate.value = formatDate(new Date());
-    setReminderCheckbox.checked = false;
-    reminderDetails.style.display = 'none';
   }
 
   // Filter tasks
@@ -353,12 +344,9 @@ document.addEventListener('DOMContentLoaded', function() {
       const taskElement = document.createElement('div');
       taskElement.className = `task-item ${task.completed ? 'completed' : ''}`;
       
-      const reminderIndicator = task.reminder ?
-        `<span class="reminder-indicator" title="Reminder set"><i class="fas fa-bell"></i></span>` : '';
-      
       taskElement.innerHTML = `
         <div class="task-info">
-          <div class="task-title">${task.title} ${reminderIndicator}</div>
+          <div class="task-title">${task.title}</div>
           <div class="task-meta">
             <span class="task-type ${task.type}">${task.type}</span>
             <span>${formatDisplayDate(task.date)}</span>
@@ -426,11 +414,9 @@ document.addEventListener('DOMContentLoaded', function() {
           const taskElement = document.createElement('div');
           taskElement.className = `task-item-calendar ${task.priority} ${task.completed ? 'completed' : ''}`;
           
-          const reminderDot = task.reminder ? '<i class="fas fa-bell reminder-dot"></i>' : '';
-          
           taskElement.innerHTML = `
             <span class="task-dot ${task.priority}"></span>
-            ${reminderDot} ${task.title}
+            ${task.title}
           `;
           tasksContainer.appendChild(taskElement);
         });
@@ -487,6 +473,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   document.querySelector('.sidebar').appendChild(logoutBtn);
 });
+
 // Theme Customization
 document.addEventListener('DOMContentLoaded', function() {
   // Load saved theme
