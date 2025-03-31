@@ -1,4 +1,3 @@
-
 // Firebase configuration
 const firebaseConfig = {
   apiKey: "AIzaSyDRbQKhLrE9bzHGYTewfrP-uG3_DR75Gfo",
@@ -9,17 +8,43 @@ const firebaseConfig = {
   appId: "1:431116535291:web:47ea2b4cd26dfc38c9775e"
 };
 
-// Initialize Firebase
+// Initialize Firebase Authentication only
 const app = firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
-const db = firebase.firestore();
 
 document.addEventListener('DOMContentLoaded', function() {
   // Check auth state
   auth.onAuthStateChanged((user) => {
     if (user) {
       // User is signed in
-      loadUserData(user.uid);
+      const currentUser = user.uid;
+      localStorage.setItem('currentUser', currentUser);
+      
+      // Set profile info from Firebase auth
+      document.getElementById('profile-name').textContent = user.displayName || user.email.split('@')[0] || 'User';
+      document.getElementById('profile-email').textContent = user.email;
+      
+      // Set profile picture if available
+      if (user.photoURL) {
+        document.getElementById('profile-pic').src = user.photoURL;
+      }
+      
+      // Initialize user data in localStorage if it doesn't exist
+      if (!localStorage.getItem(`user_${currentUser}`)) {
+        localStorage.setItem(`user_${currentUser}`, JSON.stringify({
+          name: user.displayName || user.email.split('@')[0] || 'User',
+          email: user.email,
+          profilePic: user.photoURL || 'assets/profile.png'
+        }));
+      }
+      
+      // Initialize tasks if they don't exist
+      if (!localStorage.getItem(`tasks_${currentUser}`)) {
+        localStorage.setItem(`tasks_${currentUser}`, JSON.stringify([]));
+      }
+      
+      // Load user data and tasks
+      loadUserData(currentUser);
     } else {
       // No user is signed in, redirect to login
       window.location.href = 'login.html';
@@ -93,50 +118,44 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 
   // Handle profile form submission
-  profileForm.addEventListener('submit', async function(e) {
+  profileForm.addEventListener('submit', function(e) {
     e.preventDefault();
     
     const name = editName.value.trim();
     const email = editEmail.value.trim();
-    const user = auth.currentUser;
+    const currentUser = localStorage.getItem('currentUser');
     
-    if (!user) return;
+    const userUpdate = {
+      name: name,
+      email: email,
+      updatedAt: new Date().toISOString()
+    };
     
-    try {
-      const userUpdate = {
-        name: name,
-        email: email,
-        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-      };
+    if (editPic.files.length > 0) {
+      const file = editPic.files[0];
+      const reader = new FileReader();
       
-      if (editPic.files.length > 0) {
-        const file = editPic.files[0];
-        const reader = new FileReader();
-        
-        reader.onload = async function(event) {
-          userUpdate.profilePic = event.target.result;
-          await db.collection('users').doc(user.uid).set(userUpdate, { merge: true });
-          
-          // Update UI
-          profilePic.src = event.target.result;
-          profileName.textContent = name;
-          profileEmail.textContent = email;
-          
-          profileModal.style.display = 'none';
-        };
-        
-        reader.readAsDataURL(file);
-      } else {
-        await db.collection('users').doc(user.uid).set(userUpdate, { merge: true });
+      reader.onload = function(event) {
+        userUpdate.profilePic = event.target.result;
+        localStorage.setItem(`user_${currentUser}`, JSON.stringify(userUpdate));
         
         // Update UI
+        profilePic.src = event.target.result;
         profileName.textContent = name;
         profileEmail.textContent = email;
         
         profileModal.style.display = 'none';
-      }
-    } catch (error) {
-      console.error("Error updating profile:", error);
+      };
+      
+      reader.readAsDataURL(file);
+    } else {
+      localStorage.setItem(`user_${currentUser}`, JSON.stringify(userUpdate));
+      
+      // Update UI
+      profileName.textContent = name;
+      profileEmail.textContent = email;
+      
+      profileModal.style.display = 'none';
     }
   });
 
@@ -144,19 +163,12 @@ document.addEventListener('DOMContentLoaded', function() {
   profileUpload.addEventListener('change', function(e) {
     if (e.target.files.length) {
       const reader = new FileReader();
-      reader.onload = async function(event) {
-        const user = auth.currentUser;
-        if (!user) return;
-        
-        try {
-          await db.collection('users').doc(user.uid).set({
-            profilePic: event.target.result
-          }, { merge: true });
-          
-          profilePic.src = event.target.result;
-        } catch (error) {
-          console.error("Error updating profile picture:", error);
-        }
+      reader.onload = function(event) {
+        const currentUser = localStorage.getItem('currentUser');
+        const userData = JSON.parse(localStorage.getItem(`user_${currentUser}`)) || {};
+        userData.profilePic = event.target.result;
+        localStorage.setItem(`user_${currentUser}`, JSON.stringify(userData));
+        profilePic.src = event.target.result;
       };
       reader.readAsDataURL(e.target.files[0]);
     }
@@ -182,16 +194,6 @@ document.addEventListener('DOMContentLoaded', function() {
   const taskList = document.getElementById('task-list');
   const filterButtons = document.querySelectorAll('.filter-btn');
 
-  // Reminder elements
-  const setReminderCheckbox = document.getElementById('set-reminder');
-  const reminderDetails = document.getElementById('reminder-details');
-  const reminderTime = document.getElementById('reminder-time');
-  const reminderTimeSpecific = document.getElementById('reminder-time-specific');
-
-  // Toggle reminder details
-  setReminderCheckbox.addEventListener('change', function() {
-    reminderDetails.style.display = this.checked ? 'block' : 'none';
-  });
 
   // Current date display
   const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
@@ -200,11 +202,79 @@ document.addEventListener('DOMContentLoaded', function() {
   // Set default task date to today
   taskDate.value = formatDate(new Date());
 
+  // Load user data and tasks
+  function loadUserData(userId) {
+    // Load user data from localStorage
+    const userData = JSON.parse(localStorage.getItem(`user_${userId}`)) || {
+      name: 'User',
+      email: '',
+      profilePic: 'assets/profile.png'
+    };
+    
+    // Update profile UI
+    profileName.textContent = userData.name;
+    profileEmail.textContent = userData.email;
+    profilePic.src = userData.profilePic;
+    
+    // Load tasks from localStorage
+    tasks = JSON.parse(localStorage.getItem(`tasks_${userId}`)) || [];
+    
+    // Initialize the UI
+    renderTasks();
+    renderCalendar(currentMonth, currentYear);
+    updateAnalytics();
+  }
+
+  // Save tasks to localStorage
+  function saveTasks() {
+    const currentUser = localStorage.getItem('currentUser');
+    localStorage.setItem(`tasks_${currentUser}`, JSON.stringify(tasks));
+  }
+
   // Add task
   addTaskBtn.addEventListener('click', addTask);
   taskInput.addEventListener('keypress', function(e) {
     if (e.key === 'Enter') addTask();
   });
+
+  function addTask() {
+    const title = taskInput.value.trim();
+    if (!title) return;
+    
+    const currentUser = localStorage.getItem('currentUser');
+    if (!currentUser) return;
+
+    const newTask = {
+      id: Date.now().toString(),
+      title: title,
+      type: taskType.value,
+      date: taskDate.value || formatDate(new Date()),
+      priority: taskPriority.value,
+      completed: false,
+      createdAt: new Date().toISOString(),
+      userId: currentUser,
+      ...(setReminderCheckbox.checked && {
+        reminder: {
+          minutesBefore: parseInt(reminderTime.value),
+          specificTime: reminderTimeSpecific.value
+        }
+      })
+    };
+
+    tasks.unshift(newTask);
+    saveTasks();
+    
+    // Update UI
+    renderTasks();
+    renderCalendar(currentMonth, currentYear);
+    updateAnalytics();
+    
+    // Reset form
+    taskInput.value = '';
+    taskDate.value = formatDate(new Date());
+    setReminderCheckbox.checked = false;
+    reminderDetails.style.display = 'none';
+  }
 
   // Filter tasks
   filterButtons.forEach(button => {
@@ -234,221 +304,31 @@ document.addEventListener('DOMContentLoaded', function() {
     renderCalendar(currentMonth, currentYear);
   });
 
-  async function loadUserData(userId) {
-    try {
-      const userDoc = await db.collection('users').doc(userId).get();
-      const currentUser = auth.currentUser;
-      
-      if (userDoc.exists) {
-        const userData = userDoc.data();
-        
-        // Update profile information in the UI
-        profileName.textContent = userData.name || currentUser.displayName || 'User';
-        profileEmail.textContent = userData.email || currentUser.email;
-        
-        // Handle profile picture
-        if (userData.profilePic) {
-          profilePic.src = userData.profilePic;
-        } else {
-          // Try to get photo from auth provider if available
-          profilePic.src = currentUser.photoURL || 'assets/profile.png';
-        }
-        
-        // Update the last login time
-        await db.collection('users').doc(userId).set({
-          lastLogin: firebase.firestore.FieldValue.serverTimestamp(),
-          name: userData.name || currentUser.displayName || 'User',
-          email: userData.email || currentUser.email
-        }, { merge: true });
-        
-      } else {
-        // Create a new user document with data from auth provider
-        await db.collection('users').doc(userId).set({
-          name: currentUser.displayName || 'User',
-          email: currentUser.email,
-          profilePic: currentUser.photoURL || '',
-          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-          lastLogin: firebase.firestore.FieldValue.serverTimestamp()
-        });
-        
-        // Set default UI values
-        profileName.textContent = currentUser.displayName || 'User';
-        profileEmail.textContent = currentUser.email;
-        profilePic.src = currentUser.photoURL || 'assets/profile.png';
-      }
-      // Load user tasks
-      const tasksSnapshot = await db.collection('tasks')
-      .where('userId', '==', userId)
-      .orderBy('createdAt', 'desc')
-      .get();
+  // Toggle task completion
+  function toggleComplete(e) {
+    const taskId = e.currentTarget.dataset.id;
+    const taskIndex = tasks.findIndex(task => task.id === taskId);
     
-    tasks = tasksSnapshot.docs.map(doc => ({
-      id: doc.id,  // Include the document ID
-      ...doc.data(),
-      // Convert Firestore Timestamp to Date if needed
-      createdAt: doc.data().createdAt?.toDate() || new Date(),
-      date: doc.data().date || formatDate(new Date())
-    }));
+    if (taskIndex !== -1) {
+      tasks[taskIndex].completed = !tasks[taskIndex].completed;
+      saveTasks();
+      renderTasks(document.querySelector('.filter-btn.active').dataset.filter);
+      renderCalendar(currentMonth, currentYear);
+      updateAnalytics();
+    }
+  }
+
+  // Delete task
+  function deleteTask(e) {
+    const taskId = e.currentTarget.dataset.id;
     
-    renderTasks();
+    if (!confirm("Are you sure you want to delete this task?")) return;
+    
+    tasks = tasks.filter(task => task.id !== taskId);
+    saveTasks();
+    renderTasks(document.querySelector('.filter-btn.active').dataset.filter);
     renderCalendar(currentMonth, currentYear);
     updateAnalytics();
-    
-  } catch (error) {
-    console.error("Error loading tasks:", error);
-    alert("Failed to load tasks. Please refresh the page.");
-  }
-}
-  // Add task function with reminder support
-  // Function to add a new task
-async function addTask() {
-  const title = taskInput.value.trim();
-  if (!title) return;
-  
-  const user = auth.currentUser;
-  if (!user) {
-    console.error("No user signed in");
-    return;
-  }
-
-  const newTask = {
-    title: title,
-    type: taskType.value,
-    date: taskDate.value || formatDate(new Date()),
-    priority: taskPriority.value,
-    completed: false,
-    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-    userId: user.uid,  // This associates the task with the user
-    // Add reminder data if needed
-    ...(setReminderCheckbox.checked && {
-      reminder: {
-        minutesBefore: parseInt(reminderTime.value),
-        specificTime: reminderTimeSpecific.value
-      }
-    })
-  };
-
-  try {
-    // Add the new task to Firestore
-    const docRef = await db.collection('tasks').add(newTask);
-    
-    // Add the ID to our local task object
-    newTask.id = docRef.id;
-    
-    // Add to local tasks array
-    tasks.unshift(newTask);
-    
-    // Update UI
-    renderTasks();
-    renderCalendar(currentMonth, currentYear);
-    updateAnalytics();
-    
-    // Reset form
-    taskInput.value = '';
-    taskDate.value = formatDate(new Date());
-    setReminderCheckbox.checked = false;
-    reminderDetails.style.display = 'none';
-    
-    console.log("Task added with ID: ", docRef.id);
-  } catch (error) {
-    console.error("Error adding task: ", error);
-    alert("Failed to add task: " + error.message);
-  }
-}
-
-  // Calculate reminder time
-  function calculateReminderTime(taskDate, reminder) {
-    const date = new Date(taskDate);
-    
-    if (reminder.specificTime) {
-      // Set specific time
-      const [hours, minutes] = reminder.specificTime.split(':');
-      date.setHours(parseInt(hours), parseInt(minutes));
-      
-      // Subtract reminder minutes
-      date.setMinutes(date.getMinutes() - reminder.minutesBefore);
-    } else {
-      // Default to 9 AM if no specific time
-      date.setHours(9, 0);
-      date.setMinutes(date.getMinutes() - reminder.minutesBefore);
-    }
-    
-    return date;
-  }
-
-  // Schedule notification
-  function scheduleNotification(task, reminderTime) {
-    const now = new Date();
-    const timeUntilReminder = reminderTime - now;
-    
-    if (timeUntilReminder > 0) {
-      setTimeout(() => {
-        showNotification(task);
-      }, timeUntilReminder);
-    }
-  }
-
-  // Show notification
-  function showNotification(task) {
-    // Check if browser supports notifications
-    if (!("Notification" in window)) {
-      console.log("This browser does not support desktop notification");
-      showInAppNotification(task);
-      return;
-    }
-    
-    // Check notification permissions
-    if (Notification.permission === "granted") {
-      createNotification(task);
-    } else if (Notification.permission !== "denied") {
-      Notification.requestPermission().then(permission => {
-        if (permission === "granted") {
-          createNotification(task);
-        } else {
-          showInAppNotification(task);
-        }
-      });
-    } else {
-      showInAppNotification(task);
-    }
-  }
-
-  // Create browser notification
-  function createNotification(task) {
-    const notification = new Notification(`Reminder: ${task.title}`, {
-      body: `Your task "${task.title}" is coming up!`,
-      icon: 'assets/notification-icon.png'
-    });
-    
-    notification.onclick = () => {
-      window.focus();
-      notification.close();
-    };
-  }
-
-  // Show in-app notification
-  function showInAppNotification(task) {
-    const notification = document.createElement('div');
-    notification.className = 'in-app-notification';
-    notification.innerHTML = `
-      <div class="notification-content">
-        <h3>Reminder: ${task.title}</h3>
-        <p>Your task is coming up!</p>
-        <button class="dismiss-btn">Dismiss</button>
-      </div>
-    `;
-    
-    document.body.appendChild(notification);
-    
-    // Auto-dismiss after 10 seconds
-    setTimeout(() => {
-      notification.remove();
-    }, 10000);
-    
-    // Manual dismiss
-    notification.querySelector('.dismiss-btn').addEventListener('click', () => {
-      notification.remove();
-    });
   }
 
   // Render tasks function
@@ -473,7 +353,6 @@ async function addTask() {
       const taskElement = document.createElement('div');
       taskElement.className = `task-item ${task.completed ? 'completed' : ''}`;
       
-      // Add reminder indicator if task has reminder
       const reminderIndicator = task.reminder ?
         `<span class="reminder-indicator" title="Reminder set"><i class="fas fa-bell"></i></span>` : '';
       
@@ -498,7 +377,6 @@ async function addTask() {
       taskList.appendChild(taskElement);
     });
     
-    // Add event listeners to new buttons
     document.querySelectorAll('.complete-btn').forEach(button => {
       button.addEventListener('click', toggleComplete);
     });
@@ -521,29 +399,24 @@ async function addTask() {
     const today = new Date();
     const isCurrentMonth = month === today.getMonth() && year === today.getFullYear();
     
-    // Add empty cells for days before the first day of the month
     for (let i = 0; i < firstDay; i++) {
       const emptyDay = document.createElement('div');
       emptyDay.className = 'calendar-day empty';
       calendarGrid.appendChild(emptyDay);
     }
     
-    // Add cells for each day of the month
     for (let day = 1; day <= daysInMonth; day++) {
       const dayElement = document.createElement('div');
       const dateStr = formatDate(new Date(year, month, day));
       
-      // Check if this is today
       const isToday = isCurrentMonth && day === today.getDate();
       dayElement.className = `calendar-day ${isToday ? 'today' : ''}`;
       
-      // Add day number
       const dayNumber = document.createElement('div');
       dayNumber.className = 'day-number';
       dayNumber.textContent = day;
       dayElement.appendChild(dayNumber);
       
-      // Add tasks for this day
       const dayTasks = tasks.filter(task => task.date === dateStr);
       if (dayTasks.length > 0) {
         const tasksContainer = document.createElement('div');
@@ -553,7 +426,6 @@ async function addTask() {
           const taskElement = document.createElement('div');
           taskElement.className = `task-item-calendar ${task.priority} ${task.completed ? 'completed' : ''}`;
           
-          // Add reminder indicator if task has reminder
           const reminderDot = task.reminder ? '<i class="fas fa-bell reminder-dot"></i>' : '';
           
           taskElement.innerHTML = `
@@ -567,54 +439,6 @@ async function addTask() {
       }
       
       calendarGrid.appendChild(dayElement);
-    }
-  }
-  async function toggleComplete(e) {
-    const taskId = e.currentTarget.dataset.id;
-    const taskIndex = tasks.findIndex(task => task.id === taskId);
-    
-    if (taskIndex !== -1) {
-      const newCompletedState = !tasks[taskIndex].completed;
-      
-      try {
-        // Update in Firestore
-        await db.collection('tasks').doc(taskId).update({
-          completed: newCompletedState,
-          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
-        
-        // Update local state
-        tasks[taskIndex].completed = newCompletedState;
-        
-        // Update UI
-        renderTasks(document.querySelector('.filter-btn.active').dataset.filter);
-        renderCalendar(currentMonth, currentYear);
-        updateAnalytics();
-      } catch (error) {
-        console.error("Error updating task:", error);
-        alert("Failed to update task status.");
-      }
-    }
-  }
-  async function deleteTask(e) {
-    const taskId = e.currentTarget.dataset.id;
-    
-    if (!confirm("Are you sure you want to delete this task?")) return;
-    
-    try {
-      // Delete from Firestore
-      await db.collection('tasks').doc(taskId).delete();
-      
-      // Remove from local array
-      tasks = tasks.filter(task => task.id !== taskId);
-      
-      // Update UI
-      renderTasks(document.querySelector('.filter-btn.active').dataset.filter);
-      renderCalendar(currentMonth, currentYear);
-      updateAnalytics();
-    } catch (error) {
-      console.error("Error deleting task:", error);
-      alert("Failed to delete task.");
     }
   }
 
@@ -656,6 +480,7 @@ async function addTask() {
   logoutBtn.style.cursor = 'pointer';
   logoutBtn.addEventListener('click', () => {
     auth.signOut().then(() => {
+      localStorage.removeItem('currentUser');
       window.location.href = 'login.html';
     });
   });

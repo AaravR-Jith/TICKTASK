@@ -26,11 +26,16 @@
         <p id="profile-email">guest@example.com</p>
       </div>
       <nav>
-        <ul>
-          <li class="active" data-section="tasks"><i class="fas fa-tasks"></i> Tasks</li>
-          <li data-section="calendar"><i class="fas fa-calendar-alt"></i> Calendar</li>
-          <li data-section="analytics"><i class="fas fa-chart-pie"></i> Analytics</li>
-        </ul>
+          <ul>
+            <li class="active" data-section="tasks"><i class="fas fa-tasks"></i> Tasks</li>
+            <li data-section="calendar"><i class="fas fa-calendar-alt"></i> Calendar</li>
+            <li data-section="analytics"><i class="fas fa-chart-pie"></i> Analytics</li>
+            <li data-section="reminders">
+              <a href="reminder.html" style="text-decoration: none; color: inherit;">
+                  <i class="fas fa-bell"></i> Reminders
+              </a>
+          </li>
+          </ul>
       </nav>
       <div class="theme-options">
         <h4><i class="fas fa-palette"></i> Theme Customization</h4>
@@ -45,7 +50,7 @@
             <button class="mode-btn active" data-mode="light">Light</button>
             <button class="mode-btn" data-mode="dark">Dark</button>
         </div>
-    </div>
+      </div>
     </aside>
 
     <!-- Main Content -->
@@ -61,17 +66,6 @@
             <label>
               <input type="checkbox" id="set-reminder"> Set Reminder
             </label>
-            <div id="reminder-details" style="display: none;">
-              <select id="reminder-time">
-                <option value="5">5 minutes before</option>
-                <option value="10">10 minutes before</option>
-                <option value="15">15 minutes before</option>
-                <option value="30">30 minutes before</option>
-                <option value="60">1 hour before</option>
-                <option value="1440">1 day before</option>
-              </select>
-              <input type="time" id="reminder-time-specific">
-            </div>
           </div>
         </header>
         <!-- Task Input -->
@@ -155,6 +149,34 @@
             <canvas id="tasks-chart"></canvas>
           </div>
         </div>
+      </div>
+
+      <!-- Reminders Section -->
+      <div id="reminders-section" class="content-section">
+        <h2><i class="fas fa-bell"></i> Reminders</h2>
+        <form id="reminder-form">
+          <div class="input-group">
+            <label for="reminder-task">Task Details:</label>
+            <input type="text" id="reminder-task" required placeholder="Enter task details">
+          </div>
+
+          <div class="input-row">
+            <div class="input-group">
+              <label for="reminder-date">Date:</label>
+              <input type="date" id="reminder-date" required>
+            </div>
+
+            <div class="input-group">
+              <label for="reminder-time">Time:</label>
+              <input type="time" id="reminder-time" required>
+            </div>
+          </div>
+
+          <button type="submit" class="add-btn">➕ Add Reminder</button>
+        </form>
+
+        <h3>📝 Upcoming Reminders</h3>
+        <ul id="reminder-list"></ul>
       </div>
     </main>
   </div>

@@ -914,3 +914,121 @@ button:disabled, input:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
+/* Reminders Section Styles */
+#reminders-section .container {
+  background: var(--bg-secondary);
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px var(--shadow-color);
+  text-align: center;
+  width: 100%;
+  max-width: 500px;
+  margin: 0 auto;
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+#reminders-section h2, 
+#reminders-section h3 {
+  color: var(--text-primary);
+}
+
+#reminders-section form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+#reminders-section .input-group {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+}
+
+#reminders-section .input-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+}
+
+#reminders-section input {
+  margin-top: 5px;
+  padding: 8px;
+  border: 2px solid var(--border-color);
+  border-radius: 6px;
+  transition: var(--transition);
+  width: 100%;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+#reminders-section input:focus {
+  border-color: var(--primary);
+  outline: none;
+}
+
+#reminders-section .add-btn {
+  margin-top: 10px;
+  padding: 10px;
+  background: var(--primary);
+  color: var(--text-light);
+  font-size: 16px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+#reminders-section .add-btn:hover {
+  background: var(--secondary);
+}
+
+#reminders-section ul {
+  list-style: none;
+  padding: 0;
+}
+
+#reminders-section li {
+  background: rgba(0, 0, 0, 0.05);
+  padding: 12px;
+  margin: 8px 0;
+  border-radius: 6px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: var(--transition);
+}
+
+#reminders-section li:hover {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+#reminders-section .delete-btn {
+  background: var(--danger);
+  color: white;
+  border: none;
+  padding: 6px;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-left: 10px;
+}
+
+#reminders-section .delete-btn:hover {
+  background: #c0392b;
+}
+
+#reminders-section .countdown {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-left: 10px;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
